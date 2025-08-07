@@ -1,0 +1,20 @@
+import { Router } from "express";
+import { injectable } from "tsyringe";
+import AuthController from "../controllers/authController";
+
+@injectable()
+export default class AuthRouter {
+  public authRouter: Router;
+  constructor(private authController: AuthController) {
+    this.authRouter = Router();
+    this.initRoutes();
+  }
+
+  private initRoutes(): void {
+    this.authRouter.route("/").post(this.authController.login);
+    this.authRouter.route("/register").post(this.authController.register);
+    this.authRouter
+      .route("/refresh-token")
+      .post(this.authController.refreshToken);
+  }
+}
