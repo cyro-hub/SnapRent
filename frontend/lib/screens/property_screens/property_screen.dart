@@ -1,13 +1,13 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import "package:snap_rent/core/extensions.dart";
-import "package:snap_rent/core/mock_data.dart";
-import "package:snap_rent/components/error.dart";
+import "package:snap_rent/widgets/btn_widgets/primary_btn.dart";
+import "package:snap_rent/widgets/error.dart";
 import "package:snap_rent/core/constant.dart";
-import "package:snap_rent/components/amenitie.dart";
-import "package:snap_rent/components/house_rule.dart";
-import "package:snap_rent/components/location_and_contact.dart";
+import "package:snap_rent/widgets/property_widgets/amenitie.dart";
+import "package:snap_rent/widgets/property_widgets/house_rule.dart";
+import "package:snap_rent/widgets/property_widgets/location_and_contact.dart";
+import 'package:snap_rent/services/api_service.dart';
+import "package:snap_rent/widgets/snack_bar.dart";
 
 class PropertyScreen extends StatefulWidget {
   final String propertyId;
@@ -20,8 +20,9 @@ class PropertyScreen extends StatefulWidget {
 class _PropertyScreenState extends State<PropertyScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  final api = ApiService();
 
-  Map<String, dynamic>? propertyData;
+  Map<dynamic, dynamic>? propertyData;
   bool isLoading = true;
   String? errorMessage;
 
@@ -32,63 +33,49 @@ class _PropertyScreenState extends State<PropertyScreen> {
   }
 
   Future<void> fetchProperty(String propertyId) async {
-    setState(() {
-      // propertyData = data;
-      propertyData = sampleProperty;
-      isLoading = false;
-      errorMessage = null;
-      _currentPage = 0;
-    });
+    try {
+      final data = await api.get('/properties', {"_id": propertyId});
 
-    // final url = Uri.parse(
-    //   'https://your-backend-api.com/properties/$propertyId',
-    // );
-
-    // try {
-    //   final response = await http.get(url);
-    //   if (response.statusCode == 200) {
-    //     final Map<String, dynamic> data = json.decode(response.body);
-    //   } else {
-    //     setState(() {
-    //       isLoading = false;
-    //       errorMessage =
-    //           'Failed to load property. Status: ${response.statusCode}';
-    //     });
-    //   }
-    // } catch (e) {
-    //   setState(() {
-    //     isLoading = false;
-    //     errorMessage = 'Error fetching property: $e';
-    //   });
-    // }
+      setState(() {
+        propertyData = data["data"];
+        isLoading = false;
+        errorMessage = null;
+        _currentPage = 0;
+      });
+    } catch (e) {
+      SnackbarHelper.show(
+        context,
+        'Error fetching property: $e',
+        success: false,
+      );
+    }
   }
 
-  Future<void> fetchAndAppendDetails() async {
+  Future<void> fetchAndAppendDetails(String? propertyId) async {
     try {
-      final response = await http.get(
-        Uri.parse(
-          "https://yourapi.com/property/details/${propertyData?['id']}",
-        ),
-      );
+      final data = await api.get('/properties/get-access', {
+        "_id": propertyId!,
+      });
 
-      if (response.statusCode == 200) {
-        final extraData = jsonDecode(response.body);
+      final newDetails = data["data"] as Map<String, dynamic>?;
 
-        setState(() {
-          propertyData?['location'] = extraData['location'];
-          propertyData?['contact'] = extraData['contact'];
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load details: ${response.statusCode}'),
-          ),
-        );
-      }
+      setState(() {
+        propertyData = {
+          ...(propertyData ?? {}), // if null, use empty {}
+          ...(newDetails ?? {}), // also guard newDetails
+        };
+
+        isLoading = false;
+        errorMessage = null;
+        _currentPage = 0;
+      });
+      SnackbarHelper.show(context, data['message']);
     } catch (e) {
-      ScaffoldMessenger.of(
+      SnackbarHelper.show(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        'Error getting property details: $e',
+        success: false,
+      );
     }
   }
 
@@ -112,7 +99,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
     final amenities = propertyData?['amenities'] ?? {};
     final houseRules = propertyData?['houseRules'] ?? {};
     final rentAmount = propertyData?['rentAmount'] ?? 0;
-    final rentCurrency = propertyData?['rentCurrency'] ?? '';
+    final currency = propertyData?['currency'] ?? '';
     final paymentFrequency = propertyData?['paymentFrequency'] ?? '';
     final description = propertyData?['description'] ?? '';
     final title = propertyData?['title'] ?? '';
@@ -227,7 +214,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
           // Draggable Bottom Drawer
           DraggableScrollableSheet(
             initialChildSize: 0.2,
-            minChildSize: 0.065,
+            minChildSize: 0.2,
             maxChildSize: 0.9,
             builder: (context, scrollController) {
               return Container(
@@ -289,7 +276,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                           ),
 
                           Text(
-                            '$rentCurrency ${formatPrice(rentAmount)} / $paymentFrequency',
+                            '$currency ${formatPrice(rentAmount)} / $paymentFrequency',
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -463,24 +450,11 @@ class _PropertyScreenState extends State<PropertyScreen> {
                       // Access Details Button
                       if (propertyData?['location'] == null ||
                           propertyData?['contact'] == null)
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: fetchAndAppendDetails,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              "Access Details",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
+                        PrimaryBtn(
+                          text: "Access Details",
+                          onPressed: () {
+                            fetchAndAppendDetails(propertyData?['_id']);
+                          },
                         ),
 
                       const SizedBox(height: 20),
@@ -489,7 +463,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                           propertyData?['contact'] != null)
                         buildLocationAndContact(propertyData!),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 60),
                     ],
                   ),
                 ),

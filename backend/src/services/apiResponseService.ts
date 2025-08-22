@@ -1,69 +1,42 @@
 import { injectable } from "tsyringe";
-import { ValidationErrorDetails } from "./errorService";
 
-export interface IApiResponse<T> {
-  state: boolean;
-  data?: T;
+export interface IApiResponse {
+  success: boolean;
   message: string;
-  page?: number;
-  pageSize?: number;
-  totalPages?: number;
-  hasNextPage?: boolean;
-  validationErrorResponse?: ValidationErrorDetails[];
+  data?: any;
+  errors?: any;
+  meta?: Record<string, any>;
 }
 
 @injectable()
-export default class ApiResponse<T> {
-  private state: boolean = false;
-  private data?: T = undefined;
-  private message: string = "Ok";
-  private page?: number;
-  private pageSize?: number;
-  private totalPages?: number;
-  private hasNextPage?: boolean;
-  private validationErrorResponse?: ValidationErrorDetails[];
+export default class ApiResponse {
+  private body: IApiResponse | null = null;
 
-  public setFailedResponse(
+  success(message: string, data?: any, meta?: Record<string, any>) {
+    this.body = { success: true, message, data, meta };
+    return this;
+  }
+
+  error(message: string, errors?: any, meta?: Record<string, any>) {
+    this.body = { success: false, message, errors, meta };
+    return this;
+  }
+
+  auth(
     message: string,
-    error: ValidationErrorDetails[] = []
-  ): void {
-    this.state = false;
-    this.message = message;
-    this.validationErrorResponse = error;
+    tokens: {
+      accessToken: string;
+      refreshToken: string;
+      tokenType: string;
+      expiresIn: string;
+    },
+    user: { _id: string; email: string; fullName: string }
+  ) {
+    this.body = { success: true, message, data: { tokens, user } };
+    return this;
   }
 
-  public setSuccessfulResponse(message: string, data: T): void {
-    this.state = true;
-    this.message = message;
-    this.data = data;
-  }
-
-  public setSuccessfulPageResponse(
-    message: string,
-    data: T,
-    page: number,
-    pageSize: number,
-    totalPages: number
-  ): void {
-    this.state = true;
-    this.message = message;
-    this.data = data;
-    this.page = page;
-    this.pageSize = pageSize;
-    this.totalPages = totalPages;
-    this.hasNextPage = page < totalPages;
-  }
-
-  public toJSON(): object {
-    return {
-      state: this.state,
-      data: this.data,
-      message: this.message,
-      page: this.page,
-      pageSize: this.pageSize,
-      totalPages: this.totalPages,
-      hasNextPage: this.hasNextPage,
-      validationErrorResponse: this.validationErrorResponse,
-    };
+  send(res: any, statusCode: number = 200) {
+    return res.status(statusCode).json(this.body);
   }
 }

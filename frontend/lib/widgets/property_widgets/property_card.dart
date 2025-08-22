@@ -1,23 +1,29 @@
 import 'package:flutter/material.dart';
-import "package:snap_rent/screens/property_screen.dart";
+import 'package:snap_rent/core/constant.dart';
+import "package:snap_rent/screens/property_screens/property_screen.dart";
+import 'package:snap_rent/widgets/screen_guard.dart';
 
 class PropertyCard extends StatelessWidget {
-  final String imageUrl;
+  final String image;
   final String propertyId;
-  final String propertyType;
-  final int price;
+  final String type;
+  final int rentAmount;
   final String size;
   final String title;
   final String description;
   final double rating;
   final bool hasAccess;
+  final String currency;
+  final String paymentFrequency;
 
   const PropertyCard({
     super.key,
+    required this.paymentFrequency,
+    required this.currency,
     required this.propertyId,
-    required this.imageUrl,
-    required this.propertyType,
-    required this.price,
+    required this.image,
+    required this.type,
+    required this.rentAmount,
     required this.size,
     required this.title,
     required this.description,
@@ -43,7 +49,7 @@ class PropertyCard extends StatelessWidget {
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: Image.network(
-              imageUrl,
+              image,
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -68,7 +74,7 @@ class PropertyCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        propertyType,
+                        type,
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -101,7 +107,7 @@ class PropertyCard extends StatelessWidget {
 
                 // Price
                 Text(
-                  "fcfa $price / month",
+                  "$currency ${formatPrice(rentAmount)} / $paymentFrequency",
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -147,8 +153,9 @@ class PropertyCard extends StatelessWidget {
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  PropertyScreen(propertyId: propertyId),
+                              builder: (_) => ScreenGuard(
+                                screen: PropertyScreen(propertyId: propertyId),
+                              ),
                             ),
                           );
                         },

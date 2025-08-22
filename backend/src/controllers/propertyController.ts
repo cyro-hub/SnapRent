@@ -1,19 +1,28 @@
-import { inject, injectable } from "tsyringe";
+import { injectable } from "tsyringe";
 import AsyncHandler from "../services/asyncHandlerService";
 import { NextFunction, Request, Response } from "express-serve-static-core";
 import { PropertyServices } from "../services/propertyService";
+import ApiResponse from "../services/apiResponseService";
 
 @injectable()
 export default class PropertyController {
   constructor(
     private readonly asyncHandler: AsyncHandler,
-    private propertyService: PropertyServices
+    private propertyService: PropertyServices,
+    private apiResponse: ApiResponse
   ) {}
 
   createProperty = this.asyncHandler.handler(
     async (req: Request, res: Response, next: NextFunction) => {
-      const property = await this.propertyService.createProperty(req.body);
-      return res.json(property);
+      const userId = (req.user as any)?._id;
+
+      const newProperty = { ...req.body, userId };
+
+      const property = await this.propertyService.createProperty(newProperty);
+
+      return this.apiResponse
+        .success("Property created successfully", property)
+        .send(res);
     }
   );
 
@@ -23,18 +32,24 @@ export default class PropertyController {
         req.query._id as string,
         req.body
       );
-
-      return res.json(property);
+      return this.apiResponse
+        .success("Property updated successfully", property)
+        .send(res);
     }
   );
 
   getProperty = this.asyncHandler.handler(
     async (req: Request, res: Response, next: NextFunction) => {
+      const userId = (req.user as any)?._id;
+
       const property = await this.propertyService.getProperty(
         req.query._id as string,
-        "6892751ad61a1f3fc5ff01e6"
+        userId
       );
-      return res.json(property);
+
+      return this.apiResponse
+        .success("Property fetched successfully", property)
+        .send(res, 200);
     }
   );
 
@@ -42,24 +57,29 @@ export default class PropertyController {
     async (req: Request, res: Response, next: NextFunction) => {
       const limit = Number(req.query.limit);
 
+      const userId = (req.user as any)?._id;
+
       const query = {
-        userId: req.query.ownerId as string,
+        userId,
         page: Number(req.query.page) || 1,
         limit: limit || 10,
       };
 
       const properties = await this.propertyService.getOwnersProperties(query);
-
-      return res.json(properties);
+      return this.apiResponse
+        .success("Owner properties fetched successfully", properties)
+        .send(res, 200);
     }
   );
 
-  getPropertyAccess = this.asyncHandler.handler(
+  givePropertyAccess = this.asyncHandler.handler(
     async (req: Request, res: Response, next: NextFunction) => {
-      const property = await this.propertyService.getPropertyAccess(
+      const property = await this.propertyService.givePropertyAccess(
         req.query._id as string
       );
-      return res.json(property);
+      return this.apiResponse
+        .success("Property access fetched successfully", property)
+        .send(res, 200);
     }
   );
 
@@ -67,17 +87,51 @@ export default class PropertyController {
     async (req: Request, res: Response, next: NextFunction) => {
       const limit = Number(req.query.limit);
 
+      const userId = (req.user as any)?._id;
+
       const query = {
         ...req.query,
         limit: limit || 10,
-        userId: "68907552c62c4e5d0f9bff56",
+        userId,
       };
 
       const results = await this.propertyService.searchPropertiesWithFilters(
         query
       );
+      return this.apiResponse
+        .success(
+          "Properties fetched successfully",
+          results?.data,
+          results?.pagination
+        )
+        .send(res);
+    }
+  );
 
-      res.json(results);
+  searchPropertiesWithGeospatial = this.asyncHandler.handler(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const { lon, lat, search } = req.query;
+
+      const longitude = lon ? parseFloat(lon as string) : undefined;
+      const latitude = lat ? parseFloat(lat as string) : undefined;
+
+      if (!longitude || !latitude || isNaN(longitude) || isNaN(latitude)) {
+        return this.apiResponse
+          .error("Longitude and latitude are required and must be numbers")
+          .send(res, 400);
+      }
+
+      const results = await this.propertyService.searchPropertiesWithGeospatial(
+        {
+          lng: longitude,
+          lat: latitude,
+          searchQuery: search as string | undefined,
+        }
+      );
+
+      return this.apiResponse
+        .success("Properties fetched successfully", results)
+        .send(res);
     }
   );
 }

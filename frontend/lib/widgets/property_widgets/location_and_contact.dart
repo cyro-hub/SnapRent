@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-Widget buildLocationAndContact(Map<String, dynamic> propertyData) {
+Widget buildLocationAndContact(Map<dynamic, dynamic> propertyData) {
   final location = propertyData['location'];
   final contact = propertyData['contact'];
 

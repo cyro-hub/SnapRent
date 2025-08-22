@@ -9,14 +9,14 @@ final Map<String, dynamic> sampleProperty = {
     "https://images.pexels.com/photos/8146321/pexels-photo-8146321.jpeg",
   ],
   "videos": ["https://cdn.snaprent.com/property123/tour.mp4"],
-  // "location": {
-  //   "type": "Point",
-  //   "coordinates": [9.248, 4.158], // [longitude, latitude]
-  //   "town": "Buea",
-  //   "quarter": "Molyko",
-  //   "street": "Checkpoint Street",
-  //   "landmark": "Opposite Orange Shop",
-  // },
+  "location": {
+    "type": "Point",
+    "coordinates": [9.248, 4.158], // [longitude, latitude]
+    "town": "Buea",
+    "quarter": "Molyko",
+    "street": "Checkpoint Street",
+    "landmark": "Opposite Orange Shop",
+  },
   "type": "studio",
   "floorLevel": 2,
   "size": "25m²",
@@ -44,11 +44,11 @@ final Map<String, dynamic> sampleProperty = {
     "quietHours": "10 PM - 6 AM",
     "visitorsAllowed": true,
   },
-  // "contact": {
-  //   "phone": "+237690123456",
-  //   "whatsapp": "+237690123456",
-  //   "agentName": "Mr. Bate",
-  // },
+  "contact": {
+    "phone": "+237690123456",
+    "whatsapp": "+237690123456",
+    "agentName": "Mr. Bate",
+  },
   "viewCount": 100,
   "status": true,
   "createdAt": "2025-08-01T09:00:00Z",

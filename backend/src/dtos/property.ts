@@ -13,21 +13,26 @@ import {
 } from "class-validator";
 import { Type } from "class-transformer";
 
-// Enums for toilet, bathroom, and kitchen types matching your schema
-export enum ToiletType {
-  PRIVATE = "private",
-  SHARED = "shared",
-}
+// // Enums for toilet, bathroom, and kitchen types matching your schema
+// export enum ToiletType {
+//   PRIVATE = "private",
+//   SHARED = "shared",
+// }
 
-export enum BathroomType {
-  PRIVATE = "private",
-  SHARED = "shared",
-}
+// export enum BathroomType {
+//   PRIVATE = "private",
+//   SHARED = "shared",
+// }
 
-export enum KitchenType {
-  PRIVATE = "private",
-  SHARED = "shared",
-}
+// export enum KitchenType {
+//   PRIVATE = "private",
+//   SHARED = "shared",
+// }
+
+// export enum MeterType {
+//   PREPAID = "prepaid",
+//   POSTPAID = "postpaid",
+// }
 
 class LocationDto {
   @IsString()
@@ -78,15 +83,15 @@ export class CreatePropertyDto {
   @IsString()
   description!: string;
 
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
-  images!: string[];
+  // @IsArray()
+  // @ArrayNotEmpty()
+  // @IsString({ each: true })
+  // images!: string[];
 
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  videos?: string[];
+  // @IsArray()
+  // @IsString({ each: true })
+  // @IsOptional()
+  // videos?: string[];
 
   @ValidateNested()
   @Type(() => LocationDto)

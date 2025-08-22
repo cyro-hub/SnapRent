@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
-import '../components/custom_bottom_nav_bar.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../widgets/custom_bottom_nav_bar.dart';
 import 'tab_screens/home_screen.dart';
 import 'tab_screens/explore_screen.dart';
 import 'tab_screens/my_access_screen.dart';
 import 'tab_screens/settings_screen.dart';
 import 'tab_screens/profile_screen.dart';
+import '../widgets/screen_guard.dart';
 
-class MainNavigation extends StatefulWidget {
+class MainNavigation extends ConsumerStatefulWidget {
   const MainNavigation({super.key});
 
   @override
-  State<MainNavigation> createState() => _MainNavigationState();
+  ConsumerState<MainNavigation> createState() => _MainNavigationState();
 }
 
-class _MainNavigationState extends State<MainNavigation> {
+class _MainNavigationState extends ConsumerState<MainNavigation> {
   int _currentIndex = 0;
 
   final List<GlobalKey<NavigatorState>> _navigatorKeys = List.generate(
@@ -21,26 +24,31 @@ class _MainNavigationState extends State<MainNavigation> {
     (_) => GlobalKey<NavigatorState>(),
   );
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const ExploreScreen(),
-    MyAccessScreen(),
-    const ProfileScreen(),
-    const SettingScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final List<Map<String, dynamic>> tabConfig = [
+      {'screen': const HomeScreen(), 'private': false},
+      {'screen': const ExploreScreen(), 'private': false},
+      {'screen': MyAccessScreen(), 'private': true},
+      {'screen': const ProfileScreen(), 'private': true},
+      {'screen': const SettingScreen(), 'private': true},
+    ];
+
+    final List<Widget> _screens = tabConfig.map((tab) {
+      if (tab['private'] == true) {
+        return ScreenGuard(screen: tab['screen']);
+      }
+      return tab['screen'] as Widget;
+    }).toList();
+
     return WillPopScope(
       onWillPop: () async {
         final isFirstRouteInCurrentTab = !await _navigatorKeys[_currentIndex]
             .currentState!
             .maybePop();
 
-        // If not on the first route, pop that route
         if (!isFirstRouteInCurrentTab) return false;
 
-        // If on the first route and not on the first tab, go back to first tab
         if (_currentIndex != 0) {
           setState(() => _currentIndex = 0);
           return false;
@@ -49,33 +57,41 @@ class _MainNavigationState extends State<MainNavigation> {
         return true;
       },
       child: Scaffold(
-        body: IndexedStack(
-          index: _currentIndex,
-          children: List.generate(_screens.length, (index) {
-            return Navigator(
-              key: _navigatorKeys[index],
-              onGenerateRoute: (settings) {
-                return MaterialPageRoute(builder: (_) => _screens[index]);
-              },
-            );
-          }),
-        ),
-        bottomNavigationBar: CustomBottomNavBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            if (index == _currentIndex) {
-              // Pop to root if same tab
-              _navigatorKeys[index].currentState!.popUntil(
-                (route) => route.isFirst,
-              );
-            } else {
-              // Pop current tab stack to root before switching tab
-              _navigatorKeys[_currentIndex].currentState!.popUntil(
-                (route) => route.isFirst,
-              );
-              setState(() => _currentIndex = index);
-            }
-          },
+        extendBody: true, // allows content to go behind bottom nav bar
+        extendBodyBehindAppBar: true,
+        body: Stack(
+          children: [
+            IndexedStack(
+              index: _currentIndex,
+              children: List.generate(_screens.length, (index) {
+                return Navigator(
+                  key: _navigatorKeys[index],
+                  onGenerateRoute: (settings) {
+                    return MaterialPageRoute(builder: (_) => _screens[index]);
+                  },
+                );
+              }),
+            ),
+
+            // Floating Bottom Nav
+            Positioned(
+              child: CustomBottomNavBar(
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  if (index == _currentIndex) {
+                    _navigatorKeys[index].currentState!.popUntil(
+                      (route) => route.isFirst,
+                    );
+                  } else {
+                    _navigatorKeys[_currentIndex].currentState!.popUntil(
+                      (route) => route.isFirst,
+                    );
+                    setState(() => _currentIndex = index);
+                  }
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

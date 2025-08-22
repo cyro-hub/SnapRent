@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snap_rent/core/constant.dart';
-import 'package:snap_rent/screens/property_screen.dart';
+import 'package:snap_rent/screens/property_screens/property_screen.dart';
 
 class AccessPropertyCard extends StatelessWidget {
   final String propertyId;

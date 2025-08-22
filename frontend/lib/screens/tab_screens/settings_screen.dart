@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../components/safe_scaffold.dart';
+import 'package:snap_rent/widgets/btn_widgets/secondary_btn.dart';
+import 'package:snap_rent/widgets/input_widget.dart';
+import '../../widgets/safe_scaffold.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -114,27 +116,22 @@ class _SettingScreenState extends State<SettingScreen> {
             const SizedBox(height: 40),
 
             Center(
-              child: ElevatedButton(
+              child: SecondaryButton(
+                text: "Save Settings",
                 onPressed: () {
-                  // Save settings or show confirmation
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Settings saved')),
                   );
                 },
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: Text("Save Settings", style: TextStyle(fontSize: 16)),
-                ),
               ),
             ),
 
             const SizedBox(height: 20),
 
             Center(
-              child: ElevatedButton.icon(
+              child: SecondaryButton(
+                text: "View My Properties",
                 onPressed: _navigateToMyProperties,
-                icon: const Icon(Icons.home),
-                label: const Text("View My Properties"),
               ),
             ),
           ],
@@ -145,14 +142,98 @@ class _SettingScreenState extends State<SettingScreen> {
 }
 
 // Dummy placeholder for MyPropertiesScreen
-class MyPropertiesScreen extends StatelessWidget {
-  const MyPropertiesScreen({super.key});
+// class MyPropertiesScreen extends StatelessWidget {
+//   const MyPropertiesScreen({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: const Text("My Properties")),
+//       body: const Center(child: Text("Here are all your properties.")),
+//     );
+//   }
+// }
+
+class MyPropertiesScreen extends StatefulWidget {
+  const MyPropertiesScreen({Key? key}) : super(key: key);
+
+  @override
+  _AddPropertyScreenState createState() => _AddPropertyScreenState();
+}
+
+class _AddPropertyScreenState extends State<MyPropertiesScreen> {
+  int _currentStep = 0;
+
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _sizeController = TextEditingController();
+  // Add other controllers here
+
+  void _nextStep() {
+    if (_currentStep < 2) {
+      setState(() => _currentStep += 1);
+    }
+  }
+
+  void _previousStep() {
+    if (_currentStep > 0) {
+      setState(() => _currentStep -= 1);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("My Properties")),
-      body: const Center(child: Text("Here are all your properties.")),
+      appBar: AppBar(title: const Text('Add Property')),
+      body: Stepper(
+        currentStep: _currentStep,
+        onStepContinue: _nextStep,
+        onStepCancel: _previousStep,
+        steps: [
+          Step(
+            title: const Text('Basic Info'),
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Enter the property title and description.'),
+                const SizedBox(height: 12),
+                textField(controller: _titleController, label: 'Title'),
+                const SizedBox(height: 12),
+                textField(
+                  controller: _descriptionController,
+                  label: 'Description',
+                  maxLines: 3,
+                ),
+              ],
+            ),
+            isActive: _currentStep >= 0,
+          ),
+          Step(
+            title: const Text('Details'),
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Enter size, rent, and other details.'),
+                const SizedBox(height: 12),
+                textField(controller: _sizeController, label: 'Size'),
+                // Add more fields here
+              ],
+            ),
+            isActive: _currentStep >= 1,
+          ),
+          Step(
+            title: const Text('Amenities'),
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Select available amenities for the property.'),
+                // Add your checkbox grid here
+              ],
+            ),
+            isActive: _currentStep >= 2,
+          ),
+        ],
+      ),
     );
   }
 }

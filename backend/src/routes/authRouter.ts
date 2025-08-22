@@ -14,7 +14,7 @@ export default class AuthRouter {
     this.authRouter.route("/").post(this.authController.login);
     this.authRouter.route("/register").post(this.authController.register);
     this.authRouter
-      .route("/refresh-token")
+      .route("/refresh")
       .post(this.authController.refreshToken);
   }
 }

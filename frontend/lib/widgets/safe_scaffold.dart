@@ -16,7 +16,14 @@ class SafeScaffold extends StatelessWidget {
       body: SafeArea(
         left: true,
         right: true,
-        minimum: EdgeInsets.all(12.0),
+        bottom: true, // respects bottom safe area
+        top: true, // respects top safe area
+        minimum: const EdgeInsets.only(
+          left: 8.0,
+          right: 8.0,
+          top: 8.0,
+          bottom: 114.0, // leave 100px space at bottom
+        ),
         child: child,
       ),
     );

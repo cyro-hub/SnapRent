@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:snap_rent/screens/add_property_screen.dart';
+import 'package:snap_rent/screens/property_screens/add_property_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -147,10 +147,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: navigateToAddProperty,
-        backgroundColor: Colors.indigo,
-        child: const Icon(Icons.add),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80.0), // move it up by 80 pixels
+        child: FloatingActionButton(
+          onPressed: navigateToAddProperty,
+          backgroundColor: Colors.indigo,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

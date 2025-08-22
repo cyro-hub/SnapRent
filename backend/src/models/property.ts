@@ -5,6 +5,7 @@ import mongoose, { Schema, Document, Model, Types } from "mongoose";
 type ToiletType = "private" | "shared";
 type BathroomType = "private" | "shared";
 type kitchenType = "private" | "shared";
+type meterType = "prepaid" | "postpaid";
 
 // GeoJSON Point interface for location
 interface GeoJSONPoint {
@@ -23,7 +24,7 @@ interface Amenities {
   furnished: boolean;
   waterAvailable: boolean;
   electricity: boolean;
-  meterType: string;
+  meterType: meterType;
   internet: boolean;
   parking: boolean;
   balcony: boolean;
@@ -107,10 +108,10 @@ const AmenitiesSchema = new Schema<Amenities>({
     enum: ["private", "shared"],
     required: true,
   },
+  meterType: { type: String, enum: ["prepaid", "postpaid"], required: true },
   furnished: { type: Boolean, required: true },
   waterAvailable: { type: Boolean, required: true },
   electricity: { type: Boolean, required: true },
-  meterType: { type: String, required: true },
   internet: { type: Boolean, required: true },
   parking: { type: Boolean, required: true },
   balcony: { type: Boolean, required: true },
@@ -140,8 +141,8 @@ const PropertySchema = new Schema<PropertyDocument>({
   },
   title: { type: String, required: true },
   description: { type: String, required: true },
-  images: { type: [String], required: true },
-  videos: { type: [String], required: true },
+  images: { type: [String] },
+  videos: { type: [String] },
   location: { type: GeoJSONPointSchema, required: true }, // GeoJSON point
   type: { type: String, required: true },
   floorLevel: { type: Number, required: true },
@@ -154,7 +155,7 @@ const PropertySchema = new Schema<PropertyDocument>({
   houseRules: { type: HouseRulesSchema, required: true },
   contact: { type: ContactSchema, required: true },
   viewCount: { type: Number, default: 0 },
-  status: { type: Boolean, required: true, default: true },
+  status: { type: Boolean, default: false },
   createdAt: { type: Date, required: true },
   expiresAt: { type: Date, required: true },
 });

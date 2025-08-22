@@ -5,23 +5,28 @@ import AsyncHandler from "../services/asyncHandlerService";
 import { User } from "../models/user";
 import Jwt from "../services/jsonwebservices";
 import "../config/passport";
+import ApiResponse from "../services/apiResponseService";
 
 @injectable()
 export default class AuthController {
-  constructor(private readonly asyncHandler: AsyncHandler, private jwt: Jwt) {}
+  constructor(
+    private readonly asyncHandler: AsyncHandler,
+    private jwt: Jwt,
+    private apiResponse: ApiResponse
+  ) {}
 
   register = this.asyncHandler.handler(async (req: Request, res: Response) => {
     const { email, password, fullName } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email and password are required" });
+      return this.apiResponse
+        .error("Email and password are required")
+        .send(res, 400);
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ message: "User already exists" });
+      return this.apiResponse.error("User already exists").send(res, 409);
     }
 
     const bcrypt = await import("bcryptjs");
@@ -36,24 +41,23 @@ export default class AuthController {
     });
 
     const accessToken = this.jwt.generateAccessToken({
-      id: newUser.id,
+      _id: newUser.id,
       email: newUser.email,
     });
 
-    const refreshToken = this.jwt.generateRefreshToken({ id: newUser.id });
+    const refreshToken = this.jwt.generateRefreshToken({ _id: newUser.id });
 
-    res.status(201).json({
-      message: "User registered successfully",
-      accessToken,
-      refreshToken,
-      tokenType: "Bearer",
-      expiresIn: "1h",
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        fullName: newUser.fullName,
-      },
-    });
+    return this.apiResponse
+      .auth(
+        "User registered successfully",
+        { accessToken, refreshToken, tokenType: "Bearer", expiresIn: "15m" },
+        {
+          _id: newUser._id,
+          email: newUser.email,
+          fullName: newUser.fullName,
+        }
+      )
+      .send(res, 201);
   });
 
   login = this.asyncHandler.handler(
@@ -63,33 +67,62 @@ export default class AuthController {
         { session: false },
         (err: any, user: any, info: any) => {
           if (err) return next(err);
-          if (!user)
-            return res
-              .status(401)
-              .json({ message: info?.message || "Unauthorized" });
+
+          if (!user) {
+            return this.apiResponse
+              .error(info?.message || "Unauthorized")
+              .send(res, 401);
+          }
 
           const accessToken = this.jwt.generateAccessToken({
-            id: user.id,
+            _id: user.id,
             email: user.email,
           });
 
-          const refreshToken = this.jwt.generateRefreshToken({
-            id: user.id,
-          });
+          const refreshToken = this.jwt.generateRefreshToken({ _id: user.id });
 
-          res.status(200).json({
-            message: "Login successful",
-            accessToken,
-            refreshToken,
-            tokenType: "Bearer",
-            expiresIn: "15m",
-            user: {
-              email: user.email,
-              id: user.id,
-            },
-          });
+          return this.apiResponse
+            .auth(
+              "Login successful",
+              {
+                accessToken,
+                refreshToken,
+                tokenType: "Bearer",
+                expiresIn: "15m",
+              },
+              {
+                _id: user._id,
+                email: user.email,
+                fullName: user.fullName,
+              }
+            )
+            .send(res, 200);
         }
       )(req, res, next);
+    }
+  );
+
+  authenticate = this.asyncHandler.handler(
+    (req: Request, res: Response, next: NextFunction) => {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.split(" ")[1];
+
+      if (!token) {
+        return this.apiResponse.error("No token provided").send(res, 401);
+      }
+
+      const result = this.jwt.verifyAccessToken(token);
+
+      if (!result.valid) {
+        return this.apiResponse
+          .error(result.expired ? "Token expired" : "Invalid token")
+          .send(res, 403);
+      }
+
+      // Attach user info to request
+      req.user = result.payload;
+
+      next();
     }
   );
 
@@ -97,41 +130,65 @@ export default class AuthController {
     async (req: Request, res: Response) => {
       const { refreshToken } = req.body;
 
-      if (!refreshToken)
-        return res.status(401).json({ message: "Refresh token required" });
-
-      try {
-        const decoded = this.jwt.verifyRefreshToken(refreshToken);
-
-        if (
-          decoded === null ||
-          typeof decoded === "string" ||
-          !decoded.id ||
-          !decoded.email
-        ) {
-          return res.status(403).json({ message: "Invalid token payload" });
-        }
-
-        const accessToken = this.jwt.generateAccessToken({
-          id: decoded.id,
-          email: decoded.email,
-        });
-
-        const newRefreshToken = this.jwt.generateRefreshToken({
-          id: decoded.id,
-        });
-
-        return res.status(200).json({
-          accessToken,
-          refreshToken: newRefreshToken,
-          tokenType: "Bearer",
-          expiresIn: "15m",
-        });
-      } catch (err) {
-        return res
-          .status(403)
-          .json({ message: "Invalid or expired refresh token" });
+      if (!refreshToken) {
+        return this.apiResponse.error("Refresh token required").send(res, 401);
       }
+
+      const result = this.jwt.verifyRefreshToken(refreshToken);
+
+      if (!result.valid || !result.payload) {
+        return this.apiResponse
+          .error(
+            result.expired ? "Refresh token expired" : "Invalid refresh token"
+          )
+          .send(res, 403);
+      }
+
+      // Notice: payload has { id, jti }
+      const user = await User.findById(result.payload._id);
+      if (!user) {
+        return this.apiResponse.error("User not found").send(res, 404);
+      }
+
+      const newAccessToken = this.jwt.generateAccessToken({
+        _id: user.id,
+        email: user.email,
+      });
+
+      const newRefreshToken = this.jwt.generateRefreshToken({ _id: user.id });
+
+      return this.apiResponse
+        .success("Token refreshed successfully", {
+          tokens: {
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+            tokenType: "Bearer",
+            expiresIn: "15m",
+          },
+          user: {
+            _id: user._id,
+            email: user.email,
+            fullName: user.fullName,
+          },
+        })
+        .send(res, 200);
+    }
+  );
+
+  getUserId = this.asyncHandler.handler(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.split(" ")[1];
+
+      if (!token) return next();
+
+      const result = this.jwt.verifyAccessToken(token);
+
+      if (result.valid) {
+        req.user = result.payload;
+      }
+
+      next();
     }
   );
 }
