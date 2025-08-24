@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    fetchProperties(); // fetch without filters at first load
+    fetchProperties(context); // fetch without filters at first load
   }
 
   Map<String, String> buildQueryParameters() {
@@ -426,15 +426,15 @@ class _HomeScreenState extends State<HomeScreen> {
         parking = result['parking'];
       });
 
-      fetchProperties();
+      fetchProperties(context);
     }
   }
 
-  Future<void> fetchProperties() async {
+  Future<void> fetchProperties(BuildContext context) async {
     final filters = buildQueryParameters();
 
     try {
-      final data = await api.get('properties/search', filters);
+      final data = await api.get('properties/search', context, filters);
 
       // Assuming your API returns a JSON object with a list under a key like "properties" or just a list
       List<dynamic> fetchedProperties = [];
@@ -531,7 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
               setState(() {
                 searchQuery = value;
               });
-              fetchProperties();
+              fetchProperties(context);
             },
           ),
 

@@ -46,7 +46,7 @@ export default class AsyncHandler {
       try {
         await fn(req, res, next);
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         // Handle invalid ObjectId
         if ((error as Error).name === "CastError") {
           return this.apiResponse.error("Invalid ID format").send(res, 400);

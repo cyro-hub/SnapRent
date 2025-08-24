@@ -2,8 +2,11 @@ import "reflect-metadata";
 import App from "./app";
 import { container } from "tsyringe";
 import dotenv from "dotenv";
+import { CronService } from "./services/utils/cron";
 
 dotenv.config();
+
+const cronService = container.resolve(CronService);
 
 const app = container.resolve(App);
 

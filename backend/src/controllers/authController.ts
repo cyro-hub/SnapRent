@@ -1,11 +1,13 @@
 import passport from "passport";
 import { injectable } from "tsyringe";
 import { Request, Response, NextFunction } from "express";
-import AsyncHandler from "../services/asyncHandlerService";
+import AsyncHandler from "../services/utils/asyncHandlerService";
 import { User } from "../models/user";
-import Jwt from "../services/jsonwebservices";
+import Jwt from "../services/utils/jsonwebservices";
 import "../config/passport";
-import ApiResponse from "../services/apiResponseService";
+import ApiResponse from "../services/utils/apiResponseService";
+import { Types } from "mongoose";
+import { Token } from "../models/token";
 
 @injectable()
 export default class AuthController {
@@ -112,11 +114,13 @@ export default class AuthController {
       }
 
       const result = this.jwt.verifyAccessToken(token);
+      console.log(result);
 
       if (!result.valid) {
+        const statusCode = result.expired ? 401 : 403; // 401 = Unauthorized (expired)
         return this.apiResponse
           .error(result.expired ? "Token expired" : "Invalid token")
-          .send(res, 403);
+          .send(res, statusCode);
       }
 
       // Attach user info to request
@@ -189,6 +193,64 @@ export default class AuthController {
       }
 
       next();
+    }
+  );
+
+  checkPropertyAccess = this.asyncHandler.handler(
+    async (req: Request, res: Response, next: NextFunction) => {
+      if (!req.user) {
+        return this.apiResponse.error("User not authenticated").send(res, 401);
+      }
+
+      const userId = (req.user as any)?._id;
+      const propertyId = req.query._id as string;
+      const now = new Date();
+
+      const user = await User.findById(userId);
+      if (!user) return this.apiResponse.error("User not found").send(res, 404);
+
+      // 1. Check if property is uploaded by user
+      if (user.uploadedProperties.some((p) => p.toString() === propertyId)) {
+        return next();
+      }
+
+      // 2. Check accessedProperties in non-expired tokens
+      const tokens = await Token.find({
+        userId,
+        isExpired: false,
+        expiresAt: { $gt: now },
+      });
+
+      const tokenWithProperty = tokens.find((token) =>
+        token.accessedProperties.some((ap) => ap.propertyId === propertyId)
+      );
+
+      if (tokenWithProperty) {
+        return next();
+      }
+
+      // 3. Find a token package with available usage
+      const availableToken = tokens.find(
+        (token) => token.quantity - token.used > 0
+      );
+
+      if (!availableToken) {
+        return this.apiResponse
+          .error("No available token to access this property")
+          .send(res, 403);
+      }
+
+      // 4. Consume the token
+      availableToken.used += 1;
+      availableToken.accessedProperties.push({
+        _id: new Types.ObjectId().toString(),
+        propertyId,
+        accessedAt: now,
+      });
+
+      await availableToken.save();
+
+      next(); // Access granted
     }
   );
 }

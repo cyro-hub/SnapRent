@@ -2,6 +2,7 @@ import { injectable } from "tsyringe";
 import { Router } from "express";
 import PropertyRouter from "./propertyRouter";
 import AuthRouter from "./authRouter";
+import TokenRouter from "./tokenRouter";
 
 @injectable()
 export default class AppRouter {
@@ -9,7 +10,8 @@ export default class AppRouter {
 
   constructor(
     private propertyRouter: PropertyRouter,
-    private authRouter: AuthRouter
+    private authRouter: AuthRouter,
+    private tokenRouter: TokenRouter
   ) {
     this.appRouter = Router();
     this.initializeRoutes();
@@ -18,5 +20,6 @@ export default class AppRouter {
   private initializeRoutes() {
     this.appRouter.use("/properties", this.propertyRouter.propertyRouter);
     this.appRouter.use("/auth", this.authRouter.authRouter);
+    this.appRouter.use("/token", this.tokenRouter.tokenRouter);
   }
 }

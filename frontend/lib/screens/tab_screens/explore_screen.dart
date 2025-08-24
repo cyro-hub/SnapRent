@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
-import '../../widgets/screen_guard.dart';
 import '../property_screens/property_screen.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -96,9 +95,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ScreenGuard(screen: PropertyScreen(propertyId: id)),
-          ),
+          MaterialPageRoute(builder: (_) => PropertyScreen(propertyId: id)),
         );
       },
       child: Image.asset(

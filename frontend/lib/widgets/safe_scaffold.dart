@@ -13,6 +13,7 @@ class SafeScaffold extends StatelessWidget {
       extendBodyBehindAppBar: true,
       resizeToAvoidBottomInset: false,
       appBar: appBar,
+      backgroundColor: Colors.grey.shade50,
       body: SafeArea(
         left: true,
         right: true,

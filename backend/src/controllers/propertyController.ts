@@ -1,8 +1,8 @@
 import { injectable } from "tsyringe";
-import AsyncHandler from "../services/asyncHandlerService";
+import AsyncHandler from "../services/utils/asyncHandlerService";
 import { NextFunction, Request, Response } from "express-serve-static-core";
 import { PropertyServices } from "../services/propertyService";
-import ApiResponse from "../services/apiResponseService";
+import ApiResponse from "../services/utils/apiResponseService";
 
 @injectable()
 export default class PropertyController {
@@ -18,7 +18,10 @@ export default class PropertyController {
 
       const newProperty = { ...req.body, userId };
 
-      const property = await this.propertyService.createProperty(newProperty);
+      const property = await this.propertyService.createProperty(
+        newProperty,
+        userId
+      );
 
       return this.apiResponse
         .success("Property created successfully", property)
@@ -132,6 +135,19 @@ export default class PropertyController {
       return this.apiResponse
         .success("Properties fetched successfully", results)
         .send(res);
+    }
+  );
+
+  getUserTokenProperties = this.asyncHandler.handler(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const userId = (req.user as any)?._id;
+
+      const userTokenProperties =
+        await this.propertyService.getUserTokenProperties(userId);
+
+      return this.apiResponse
+        .success("Property fetched successfully", userTokenProperties)
+        .send(res, 200);
     }
   );
 }

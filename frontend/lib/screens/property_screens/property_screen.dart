@@ -29,12 +29,12 @@ class _PropertyScreenState extends State<PropertyScreen> {
   @override
   void initState() {
     super.initState();
-    fetchProperty(widget.propertyId);
+    fetchProperty(widget.propertyId, context);
   }
 
-  Future<void> fetchProperty(String propertyId) async {
+  Future<void> fetchProperty(String propertyId, BuildContext context) async {
     try {
-      final data = await api.get('/properties', {"_id": propertyId});
+      final data = await api.get('/properties', context, {"_id": propertyId});
 
       setState(() {
         propertyData = data["data"];
@@ -51,9 +51,12 @@ class _PropertyScreenState extends State<PropertyScreen> {
     }
   }
 
-  Future<void> fetchAndAppendDetails(String? propertyId) async {
+  Future<void> fetchAndAppendDetails(
+    String? propertyId,
+    BuildContext context,
+  ) async {
     try {
-      final data = await api.get('/properties/get-access', {
+      final data = await api.get('/properties/get-access', context, {
         "_id": propertyId!,
       });
 
@@ -73,7 +76,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
     } catch (e) {
       SnackbarHelper.show(
         context,
-        'Error getting property details: $e',
+        'Error getting property access',
         success: false,
       );
     }
@@ -91,7 +94,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
           isLoading = true;
           errorMessage = null;
         });
-        fetchProperty(widget.propertyId);
+        fetchProperty(widget.propertyId, context);
       });
     }
 
@@ -213,8 +216,8 @@ class _PropertyScreenState extends State<PropertyScreen> {
 
           // Draggable Bottom Drawer
           DraggableScrollableSheet(
-            initialChildSize: 0.2,
-            minChildSize: 0.2,
+            initialChildSize: 0.32,
+            minChildSize: 0.25,
             maxChildSize: 0.9,
             builder: (context, scrollController) {
               return Container(
@@ -453,7 +456,10 @@ class _PropertyScreenState extends State<PropertyScreen> {
                         PrimaryBtn(
                           text: "Access Details",
                           onPressed: () {
-                            fetchAndAppendDetails(propertyData?['_id']);
+                            fetchAndAppendDetails(
+                              propertyData?['_id'],
+                              context,
+                            );
                           },
                         ),
 
@@ -463,7 +469,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                           propertyData?['contact'] != null)
                         buildLocationAndContact(propertyData!),
 
-                      const SizedBox(height: 60),
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),

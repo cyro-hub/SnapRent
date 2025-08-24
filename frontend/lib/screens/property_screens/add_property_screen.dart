@@ -156,7 +156,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
     );
   }
 
-  Future<void> submit() async {
+  Future<void> submit(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
 
     final propertyData = {
@@ -212,7 +212,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
     };
 
     try {
-      final response = await api.post('properties', propertyData);
+      final response = await api.post('properties', propertyData, context);
 
       if (response != null &&
           response['data'] != null &&
@@ -674,7 +674,12 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                 children: [
                   const SizedBox(width: 0),
                   Expanded(
-                    child: PrimaryBtn(text: "Add images", onPressed: submit),
+                    child: PrimaryBtn(
+                      text: "Add images",
+                      onPressed: () {
+                        submit(context);
+                      },
+                    ),
                   ),
                   const SizedBox(height: 40),
                 ],

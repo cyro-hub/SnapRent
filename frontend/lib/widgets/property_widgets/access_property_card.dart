@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:snap_rent/core/constant.dart';
 import 'package:snap_rent/screens/property_screens/property_screen.dart';
+import 'package:snap_rent/screens/token_and_payment/token_screen.dart';
 
 class AccessPropertyCard extends StatelessWidget {
   final String propertyId;
   final String title;
   final String image;
   final int rentAmount;
-  final String landmark;
-  final String town;
   final String rentCurrency;
-  final String paymentFrequency;
+  final DateTime expiresIn;
+  final String tokenPackageId; // for renewal
 
   const AccessPropertyCard({
     super.key,
@@ -18,107 +18,137 @@ class AccessPropertyCard extends StatelessWidget {
     required this.title,
     required this.image,
     required this.rentAmount,
-    required this.landmark,
-    required this.town,
     required this.rentCurrency,
-    required this.paymentFrequency,
+    required this.expiresIn,
+    required this.tokenPackageId,
   });
 
-  void _navigateToDetails(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PropertyScreen(propertyId: propertyId),
-      ),
-    );
-  }
+  bool get isExpired => DateTime.now().isAfter(expiresIn);
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => _navigateToDetails(context),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        height: 180,
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          image: DecorationImage(image: NetworkImage(image), fit: BoxFit.cover),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Stack(
-            children: [
-              // Dark gradient overlay
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.black.withOpacity(0.05),
-                        Colors.black.withOpacity(0.8),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          // Background Image
+          Image.network(
+            image,
+            height: 180,
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
+
+          // Gradient overlay for title & price
+          if (!isExpired)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.black54, Colors.transparent],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
                   ),
                 ),
-              ),
-
-              // Property details
-              Positioned(
-                left: 14,
-                right: 14,
-                bottom: 14,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      shorten(title, maxLength: 20),
                       style: const TextStyle(
                         color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      "$rentCurrency ${formatPrice(rentAmount)}",
+                      style: const TextStyle(
+                        color: Colors.green,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$rentCurrency ${formatPrice(rentAmount)} / $paymentFrequency',
-                      style: const TextStyle(
-                        color: Colors.green,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          color: Colors.white70,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            "$landmark, $town",
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+
+          // Overlay if expired
+          if (isExpired)
+            Container(
+              height: 180,
+              color: Colors.black.withOpacity(0.6),
+              alignment: Alignment.center,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          TokenScreen(tokenPackageId: tokenPackageId),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.recycling),
+                    SizedBox(width: 8),
+                    Text("Renew Token"),
+                  ],
+                ),
+              ),
+            ),
+
+          // View button if not expired
+          if (!isExpired)
+            Container(
+              height: 180,
+              alignment: Alignment.center,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PropertyScreen(propertyId: propertyId),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.visibility),
+                    SizedBox(width: 8),
+                    Text("View"),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -1,6 +1,6 @@
 import { injectable } from "tsyringe";
 import { Services } from "./services";
-import { User, UserDocument } from "../models/user";
+import { TokenPackage, User, UserDocument } from "../models/user";
 
 @injectable()
 export class UserServices extends Services<UserDocument> {
@@ -8,15 +8,80 @@ export class UserServices extends Services<UserDocument> {
     super(User);
   }
 
-  public getAccessiblePropertyIds(user: UserDocument) {
-    const now = new Date();
+  getUser = async (userId: string) => {
+    this.validateObjectId(userId);
 
-    const ids = user.tokenPackages
-      .filter((pkg) => !pkg.isExpired && pkg.expiresAt > now)
-      .flatMap((pkg) =>
-        pkg.accessedProperties.map((ap) => ap.propertyId.toString())
-      );
+    const user = await User.findById(userId).select(
+      "-password  -tokenPackages"
+    );
+    if (!user) {
+      throw new Error("User not found");
+    }
 
-    return [...new Set(ids)];
-  }
+    return user;
+  };
+
+  updateUser = async (userId: string, updateData: Partial<UserDocument>) => {
+    this.validateObjectId(userId);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true } // new: true returns updated doc
+    ).select("-password -tokenPackages");
+
+    if (!updatedUser) {
+      throw new Error("User not found");
+    }
+
+    return updatedUser;
+  };
+
+  deleteUser = async (userId: string) => {
+    this.validateObjectId(userId);
+
+    const deletedUser = await User.findByIdAndDelete(userId).select(
+      "-password -tokenPackages"
+    );
+
+    if (!deletedUser) {
+      throw new Error("User not found");
+    }
+
+    return deletedUser;
+  };
+
+  getAllUsers = async (page = 1, limit = 10) => {
+    const skip = (page - 1) * limit;
+
+    const users = await User.find()
+      .select("-password -tokenPackages")
+      .skip(skip)
+      .limit(limit);
+
+    const total = await User.countDocuments();
+
+    return {
+      users,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  };
+
+  changeUserStatus = async (userId: string, isActive: boolean) => {
+    this.validateObjectId(userId);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: { isActive } },
+      { new: true, runValidators: true }
+    ).select("-password -tokenPackages");
+
+    if (!updatedUser) {
+      throw new Error("User not found");
+    }
+
+    return updatedUser;
+  };
 }

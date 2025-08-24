@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snap_rent/core/constant.dart';
 import "package:snap_rent/screens/property_screens/property_screen.dart";
-import 'package:snap_rent/widgets/screen_guard.dart';
 
 class PropertyCard extends StatelessWidget {
   final String image;
@@ -30,11 +29,6 @@ class PropertyCard extends StatelessWidget {
     required this.rating,
     required this.hasAccess,
   });
-
-  String _shorten(String text, {int maxLength = 100}) {
-    if (text.length <= maxLength) return text;
-    return '${text.substring(0, maxLength)}...';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +113,7 @@ class PropertyCard extends StatelessWidget {
 
                 // Short Description
                 Text(
-                  _shorten(description, maxLength: 100),
+                  shorten(description, maxLength: 100),
                   style: const TextStyle(fontSize: 13, color: Colors.black87),
                 ),
 
@@ -153,9 +147,8 @@ class PropertyCard extends StatelessWidget {
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => ScreenGuard(
-                                screen: PropertyScreen(propertyId: propertyId),
-                              ),
+                              builder: (_) =>
+                                  PropertyScreen(propertyId: propertyId),
                             ),
                           );
                         },

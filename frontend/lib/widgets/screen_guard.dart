@@ -12,9 +12,14 @@ class ScreenGuard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
 
-    // Background token refresh
-    ref.read(authProvider.notifier).refreshIfNeeded();
+    // Refresh token if needed
+    ref.read(authProvider.notifier).refreshIfNeeded(context);
 
-    return authState != null ? screen : LoginScreen(redirectTo: screen);
+    // Redirect to login if no auth state
+    if (authState == null) {
+      return LoginScreen(redirectTo: screen);
+    }
+
+    return screen;
   }
 }

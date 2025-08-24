@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:snap_rent/services/api_service.dart';
 import '../models/auth_state.dart';
 
@@ -5,10 +6,13 @@ class AuthService {
   final ApiService _api = ApiService();
 
   /// Refresh the access token using refreshToken
-  Future<AuthState> refreshToken(String refreshToken) async {
+  Future<AuthState> refreshToken(
+    String refreshToken,
+    BuildContext context,
+  ) async {
     final data = await _api.post('auth/refresh', {
       'refreshToken': refreshToken,
-    });
+    }, context);
 
     final tokens = data['data']?['tokens'];
     final user = data['data']?['user'];

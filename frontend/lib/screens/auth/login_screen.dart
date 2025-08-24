@@ -31,7 +31,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   final api = ApiService();
 
-  Future<void> _login() async {
+  Future<void> _login(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
 
     if (!mounted) return;
@@ -44,7 +44,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final data = await api.post('auth', {
         'email': email,
         'password': password,
-      });
+      }, context);
 
       // Show backend message
       final message = data['message'] ?? 'Login successful';
@@ -100,7 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  Future<void> _handleGoogleSignIn() async {
+  Future<void> _handleGoogleSignIn(BuildContext context) async {
     if (!mounted) return;
     setState(() => _isLoading = true);
 
@@ -121,7 +121,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final data = await api.post('auth/google', {
         'email': googleUser.email,
         'idToken': (await googleUser.authentication).idToken,
-      });
+      }, context);
 
       final message = data['message'] ?? 'Login successful';
       if (mounted) {
@@ -296,7 +296,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
-                      child: PrimaryBtn(text: 'Login', onPressed: _login),
+                      child: PrimaryBtn(
+                        text: 'Login',
+                        onPressed: () {
+                          _login(context);
+                        },
+                      ),
                     ),
                     const SizedBox(height: 16),
                     const Text("or"),
@@ -304,7 +309,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     TertiaryBtn(
                       text: "Continue with Google",
                       icon: Image.asset('assets/google_icon.png', height: 20),
-                      onPressed: _handleGoogleSignIn,
+                      onPressed: () {
+                        _handleGoogleSignIn(context);
+                      },
                     ),
                     const SizedBox(height: 20),
                     TextButton(
@@ -318,7 +325,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       },
                       child: const Text("Don't have an account? Register"),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 55),
                   ],
                 ),
               ),

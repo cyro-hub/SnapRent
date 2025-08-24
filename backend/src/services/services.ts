@@ -1,6 +1,6 @@
 import { injectable } from "tsyringe";
-import { Model } from "mongoose";
-import CustomError, { ValidationErrorDetails } from "./errorService";
+import mongoose, { Model } from "mongoose";
+import CustomError, { ValidationErrorDetails } from "./utils/errorService";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
@@ -67,6 +67,14 @@ export class Services<T> {
     }
 
     return;
+  };
+
+  validateObjectId = (id: string) => {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new CustomError(`Invalid ID.`, {
+        statusCode: 400,
+      });
+    }
   };
 
   private getModelName(): string {

@@ -31,10 +31,7 @@ export default class PropertyRouter {
 
     this.propertyRouter
       .route("/")
-      .get(
-        this.authController.authenticate,
-        this.propertyController.getProperty
-      );
+      .get(this.authController.getUserId, this.propertyController.getProperty);
 
     this.propertyRouter
       .route("/owner")
@@ -47,6 +44,7 @@ export default class PropertyRouter {
       .route("/get-access")
       .get(
         this.authController.authenticate,
+        this.authController.checkPropertyAccess,
         this.propertyController.givePropertyAccess
       );
 
@@ -62,6 +60,13 @@ export default class PropertyRouter {
       .get(
         this.authController.getUserId,
         this.propertyController.searchPropertiesWithGeospatial
+      );
+
+    this.propertyRouter
+      .route("/token")
+      .get(
+        this.authController.authenticate,
+        this.propertyController.getUserTokenProperties
       );
   }
 }

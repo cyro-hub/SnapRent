@@ -1,35 +1,42 @@
-// providers/auth_provider.dart
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/auth_state.dart';
 import '../services/auth_service.dart';
+import '../screens/auth/login_screen.dart';
 
 class AuthNotifier extends StateNotifier<AuthState?> {
   AuthNotifier() : super(null);
 
-  final AuthService _authService = AuthService(); // ← instance
-
-  // Logout
-  void logout() {
-    state = null;
-  }
-
+  final AuthService _authService = AuthService();
   bool _isRefreshing = false;
 
-  Future<void> refreshIfNeeded() async {
+  /// Automatically refresh token if needed
+  Future<void> refreshIfNeeded(BuildContext context) async {
     if (_isRefreshing || state == null || !state!.willExpireSoon) return;
 
     _isRefreshing = true;
 
-    print("this is a testing example!");
     try {
-      final newState = await _authService.refreshToken(state!.refreshToken);
+      final newState = await _authService.refreshToken(
+        state!.refreshToken,
+        context,
+      );
 
       state = newState;
     } catch (_) {
-      logout();
+      logout(context);
     } finally {
       _isRefreshing = false;
     }
+  }
+
+  /// Logout user and redirect
+  void logout(BuildContext context) {
+    state = null;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   }
 }
 

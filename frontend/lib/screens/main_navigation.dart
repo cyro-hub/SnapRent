@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import 'tab_screens/home_screen.dart';
 import 'tab_screens/explore_screen.dart';
-import 'tab_screens/my_access_screen.dart';
+import 'tab_screens/access_screen.dart';
 import 'tab_screens/settings_screen.dart';
 import 'tab_screens/profile_screen.dart';
 import '../widgets/screen_guard.dart';

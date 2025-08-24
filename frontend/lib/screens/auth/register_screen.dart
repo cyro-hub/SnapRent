@@ -32,7 +32,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   final api = ApiService();
 
-  Future<void> _register() async {
+  Future<void> _register(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -46,7 +46,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         'email': email,
         'password': password,
         'fullName': fullName,
-      });
+      }, context);
 
       final message = data['message'] ?? 'Registered successfully';
       if (!mounted) return;
@@ -93,7 +93,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   // _handleGoogleSignIn
-  Future<void> _handleGoogleSignIn() async {
+  Future<void> _handleGoogleSignIn(BuildContext context) async {
     if (!mounted) return;
     setState(() => _isLoading = true);
 
@@ -111,7 +111,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       final data = await api.post('auth/google', {
         'email': googleUser.email,
         'idToken': (await googleUser.authentication).idToken,
-      });
+      }, context);
 
       final message = data['message'] ?? 'Login successful';
       if (!mounted) return;
@@ -289,7 +289,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    PrimaryBtn(text: 'Register', onPressed: _register),
+                    PrimaryBtn(
+                      text: 'Register',
+                      onPressed: () {
+                        _register(context);
+                      },
+                    ),
 
                     const SizedBox(height: 16),
                     const Text("or"),
@@ -297,7 +302,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     TertiaryBtn(
                       text: "Continue with Google",
                       icon: Image.asset('assets/google_icon.png', height: 20),
-                      onPressed: _handleGoogleSignIn,
+                      onPressed: () {
+                        _handleGoogleSignIn(context);
+                      },
                     ),
                     const SizedBox(height: 20),
                     TextButton(
@@ -311,7 +318,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       },
                       child: const Text("Already have an account? Login"),
                     ),
-                    const SizedBox(height: 60),
+                    const SizedBox(height: 110),
                   ],
                 ),
               ),
